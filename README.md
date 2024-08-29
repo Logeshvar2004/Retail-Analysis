@@ -10,7 +10,7 @@ This repository contains a Python application for real-time person tracking usin
 - **Age and Gender Classification:** Integrates pre-trained Caffe models for age and gender detection.
 - **Kalman Filter:** Applies Kalman Filter for smooth tracking of object positions.
 - **Dwell Time Calculation:** Records the dwell time of individuals standing in the same place for more than a specified duration.
-- **Data Logging:** Saves relevant data (ID, age, gender, dwell time) to a CSV file if the person remains in the same position.
+- **Data Logging:** Saves relevant data (ID, age, gender, dwell time, zone) to a CSV file if the person remains in the same position.
 
 ### Requirements
 - Python 3.10 or later
@@ -40,6 +40,7 @@ The output CSV file contains:
 - `Gender`: Predicted gender of the person.
 - `Age`: Predicted age range of the person.
 - `Dwell Time`: The time the person has been detected standing in the same place.
+- `Zone`: Which zone they were in (cosmetics, stationery, Home appliances, etc)
 
 ### Acknowledgements
 - YOLOv8 for object detection
