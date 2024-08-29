@@ -22,18 +22,6 @@ This repository contains a Python application for real-time person tracking usin
 - NumPy
 - FilterPy
 
-### Installation
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/your-username/repository-name.git
-    cd repository-name
-    ```
-
-2. Install required packages:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
 3. Download YOLOv8 weights and place them in the appropriate directory.
 
 4. Download the pre-trained Caffe models for age and gender classification and place them in the `Retail` directory.
