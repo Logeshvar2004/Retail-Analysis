@@ -6,30 +6,25 @@ import csv
 import json
 from centroidtracker import CentroidTracker
 from ultralytics import YOLO
-from shapely.geometry import Point
+from shapely.geometry import Point  
 from shapely.geometry.polygon import Polygon
 
-age_net = cv2.dnn.readNetFromCaffe('Retail\\age_deploy.prototxt', 'Retail\\age_net.caffemodel')
-gender_net = cv2.dnn.readNetFromCaffe('Retail\\gender_deploy.prototxt', 'Retail\\gender_net.caffemodel')
+age_net = cv2.dnn.readNetFromCaffe('Retail\\Models\\age_deploy.prototxt', 'Retail\\Models\\age_net.caffemodel')
+gender_net = cv2.dnn.readNetFromCaffe('Retail\\Models\\gender_deploy.prototxt', 'Retail\\Models\\gender_net.caffemodel')
 
 def non_max_suppression_fast(boxes, overlapThresh):
     try:
         if len(boxes) == 0:
             return []
-
         if boxes.dtype.kind == "i":
             boxes = boxes.astype("float")
-
         pick = []
-
         x1 = boxes[:, 0]
         y1 = boxes[:, 1]
         x2 = boxes[:, 2]
         y2 = boxes[:, 3]
-
         area = (x2 - x1 + 1) * (y2 - y1 + 1)
         idxs = np.argsort(y2)
-
         while len(idxs) > 0:
             last = len(idxs) - 1
             i = idxs[last]
@@ -46,7 +41,7 @@ def non_max_suppression_fast(boxes, overlapThresh):
             idxs = np.delete(idxs, np.concatenate(([last], np.where(overlap > overlapThresh)[0])))
 
         return boxes[pick].astype("int")
-    except Exception as e:
+    except Exception as e:  
         print("Exception occurred in non_max_suppression: {}".format(e))
         return []
 
@@ -117,7 +112,7 @@ def main():
     dtime = {}
     dwell_time = {}
 
-    zones = load_zones_from_json('Retail\\zone.json')
+    zones = load_zones_from_json('Retail\\zone2.json')
 
     with open('detections.csv', 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
