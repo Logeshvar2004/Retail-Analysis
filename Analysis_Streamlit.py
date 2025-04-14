@@ -19,18 +19,8 @@ if 'analyzed_data' not in st.session_state:
 # Sidebar configuration
 st.sidebar.header("Configuration")
 uploaded_file = st.sidebar.file_uploader("Upload tracking data (CSV)", type=['csv'])
-uploaded_zone = st.sidebar.file_uploader("Upload zone JSON file (optional)", type=['json'])
-
 # Sample data option
 use_sample_data = st.sidebar.checkbox("Use sample data instead", False)
-
-# Link to main application
-if st.sidebar.button("Go to Video Analysis"):
-    st.sidebar.info("Redirecting to Video Analysis tool...")
-    # Note: In a real application, you would use st.experimental_set_query_params() or similar
-    # for navigation between Streamlit pages. Since this is a separate file demo,
-    # we're just showing a placeholder message.
-    st.sidebar.success("In a real deployment, this would navigate to the video analysis page.")
 
 # About section in sidebar
 st.sidebar.markdown("---")
@@ -540,30 +530,9 @@ def generate_csv_template():
     }
     return pd.DataFrame(template_data)
 
-# Function to generate a sample zone JSON
-def generate_zone_json():
-    zone_data = [
-        {
-            "name": "Zone 1",
-            "points": [[100, 100], [300, 100], [300, 300], [100, 300]]
-        },
-        {
-            "name": "Zone 2",
-            "points": [[350, 100], [550, 100], [550, 300], [350, 300]]
-        },
-        {
-            "name": "Zone 3",
-            "points": [[100, 350], [300, 350], [300, 550], [100, 550]]
-        },
-        {
-            "name": "Zone 4",
-            "points": [[350, 350], [550, 350], [550, 550], [350, 550]]
-        }
-    ]
-    return zone_data
 
 # Create download buttons
-col1, col2 = st.columns(2)
+col1 = st.columns(1)
 
 with col1:
     csv_template = generate_csv_template()
@@ -573,16 +542,6 @@ with col1:
         data=csv,
         file_name="retail_tracking_template.csv",
         mime="text/csv",
-    )
-
-with col2:
-    zone_json = generate_zone_json()
-    json_str = json.dumps(zone_json, indent=2)
-    st.download_button(
-        label="Download Zone JSON Template",
-        data=json_str,
-        file_name="retail_zones_template.json",
-        mime="application/json",
     )
 
 st.markdown("""

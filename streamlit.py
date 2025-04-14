@@ -29,18 +29,15 @@ if 'analyzed' not in st.session_state:
 if 'zone_stats' not in st.session_state:
     st.session_state.zone_stats = None
 
-# Configuration sidebar
-st.sidebar.header("Configuration")
-
 # Default paths as fallback
 default_video_path = r"D:\Coding\python\Retail\2.mp4"
 default_zone_path = r"D:\Coding\python\Retail\zone2.json"
 
 # Detection parameters
-confidence_threshold = st.sidebar.slider("Detection confidence", 0.1, 1.0, 0.5)
-distance_threshold = st.sidebar.slider("Tracking distance threshold", 10, 100, 50)
-show_labels = st.sidebar.checkbox("Show detailed labels", True)
-processing_delay = st.sidebar.slider("Processing delay (ms)", 0, 100, 30) / 1000.0
+# confidence_threshold = st.sidebar.slider("Detection confidence", 0.1, 1.0, 0.5)
+# distance_threshold = st.sidebar.slider("Tracking distance threshold", 10, 100, 50)
+# show_labels = st.sidebar.checkbox("Show detailed labels", True)
+# processing_delay = st.sidebar.slider("Processing delay (ms)", 0, 100, 30) / 1000.0
 
 # About section in sidebar
 st.sidebar.markdown("---")  # Add a separator
@@ -182,6 +179,54 @@ def get_retail_zone_name(zone_name):
     if zone_name in retail_zones:
         return retail_zones[zone_name]
     return zone_name
+# Add this function before returning zone_stats in the process_video function
+def save_tracking_data(object_zones, zone_dwell_times, zone_entry_times, entry_times):
+    # Prepare data for CSV
+    tracking_data = []
+    
+    for object_id in object_zones.keys():
+        # Get current zone
+        current_zone = object_zones.get(object_id, "Unknown")
+        
+        # Get gender and age from zone stats if available
+        gender = "Unknown"
+        age = "Unknown"
+        
+        # Look through all zones to find gender and age for this object
+        for zone_name, stats in zone_stats.items():
+            # Check gender
+            if object_id in stats.get('male_tracked', set()):
+                gender = "Male"
+            elif object_id in stats.get('female_tracked', set()):
+                gender = "Female"
+            
+            # Check age
+            for age_group, tracked_ids in stats.get('age_tracked', {}).items():
+                if object_id in tracked_ids:
+                    age = age_group
+                    break
+        
+        # Calculate total dwell time
+        total_dwell = 0
+        if object_id in zone_dwell_times:
+            total_dwell = sum(zone_dwell_times[object_id].values())
+        
+        # Add to tracking data
+        tracking_data.append({
+            'Object ID': object_id,
+            'Age': age,
+            'Gender': gender,
+            'Dwell Time': round(total_dwell, 2),
+            'Zone': current_zone
+        })
+    
+    # Convert to DataFrame
+    df = pd.DataFrame(tracking_data)
+    
+    # Save to CSV
+    csv_path = r"D:\Coding\python\Retail\detections.csv"
+    df.to_csv(csv_path, index=False)
+    return csv_path
 
 # Function to process video
 def process_video(video_path, zone_path, analyze_only=False):
@@ -277,7 +322,7 @@ def process_video(video_path, zone_path, analyze_only=False):
         status_text.text(f"Processing frame {frame_count}/{total_frames} ({progress}%) - Objects tracked: {len(object_kalman_filters)}")
         
         # Run object detection
-        results = models['yolo'](frame, conf=confidence_threshold)
+        results = models['yolo'](frame)
         
         # Prepare lists for new detections
         new_centroids = []
@@ -324,7 +369,7 @@ def process_video(video_path, zone_path, analyze_only=False):
             
             # Match existing objects to new detections
             for row, col in zip(row_ind, col_ind):
-                if D[row, col] < distance_threshold:  # Only if distance is below threshold
+                if D[row, col]:  # Only if distance is below threshold
                     object_id = list(predicted_centroids.keys())[row]
                     current_centroid = new_centroids[col]
                     current_zone = new_zones[col]
@@ -473,13 +518,9 @@ def process_video(video_path, zone_path, analyze_only=False):
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             
             # Show detailed labels if enabled
-            if show_labels:
-                retail_zone_name = get_retail_zone_name(current_zone)
-                label = f"ID: {object_id}, {gender}, {age}, Zone: {retail_zone_name}"
-                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            else:
-                # Simplified label
-                cv2.putText(frame, f"ID: {object_id}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            retail_zone_name = get_retail_zone_name(current_zone)
+            label = f"ID: {object_id}, {gender}, {age}, Zone: {retail_zone_name}"
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         
         # Draw zone polygons
         for zone_name, zone_polygon in zones.items():
@@ -513,10 +554,6 @@ def process_video(video_path, zone_path, analyze_only=False):
         # Check if we should stop playback
         if not st.session_state.playing and not analyze_only:
             break
-            
-        # Delay for display
-        time.sleep(processing_delay)
-    
     # Cleanup
     cap.release()
     
@@ -533,6 +570,9 @@ def process_video(video_path, zone_path, analyze_only=False):
     progress_bar.progress(100)
     status_text.text("Processing complete!")
     
+# Call the function to save tracking data
+    csv_path = save_tracking_data(object_zones, zone_dwell_times, zone_entry_times, entry_times)
+    status_text.text(f"Processing complete! Tracking data saved to {csv_path}")
     return zone_stats
 
 # Function to create analytics visualizations
